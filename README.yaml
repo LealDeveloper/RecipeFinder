@@ -1,0 +1,133 @@
+project:
+  name: RecipeFinder API
+  description: >
+    A .NET 10 Web API to manage recipes and ingredients.
+    Users can add recipes with ingredients, search recipes by ingredients,
+    list all ingredients, fetch images for ingredients, and view Swagger docs.
+  architecture: Clean Architecture
+  layers:
+    domain: Entities and core business rules
+    application: Handlers, Commands, Interfaces
+    infrastructure: Repositories, Persistence (PostgreSQL), external API services
+    api: Controllers, DTOs, FluentValidation, Dependency Injection
+
+structure:
+  root: RecipeFinder/
+  src:
+    - RecipeFinder.API:
+        - Controllers/
+        - DTOs/
+        - DependencyInjection/
+        - Program.cs
+    - RecipeFinder.Application:
+        - Recipes/
+        - Interfaces/
+    - RecipeFinder.Infrastructure:
+        - Persistence/
+        - Repositories/
+        - Services/
+    - RecipeFinder.Domain:
+        - Entities/
+  tests: []
+
+prerequisites:
+  - .NET 10 SDK
+  - PostgreSQL installed and running
+  - Optional: Visual Studio 2022 / VS Code
+
+database:
+  setup:
+    - "CREATE DATABASE recipefinderdb;"
+  connection_string:
+    file: src/RecipeFinder.API/appsettings.json
+    content: |
+      {
+        "ConnectionStrings": {
+          "DefaultConnection": "Host=localhost;Port=5432;Database=recipefinderdb;Username=postgres;Password=YOUR_PASSWORD"
+        }
+      }
+
+dependencies:
+  nuget_packages:
+    - Microsoft.EntityFrameworkCore.Design
+    - Microsoft.EntityFrameworkCore.Npgsql
+    - FluentValidation.AspNetCore
+    - MediatR.Extensions.Microsoft.DependencyInjection
+    - Swashbuckle.AspNetCore
+  restore_command: "dotnet restore"
+
+migrations:
+  apply_command: >
+    dotnet ef database update
+    --project src/RecipeFinder.Infrastructure
+    --startup-project src/RecipeFinder.API
+
+running_api:
+  command: "dotnet run --project src/RecipeFinder.API"
+  url: "http://localhost:5221"
+  swagger: "http://localhost:5221/swagger/index.html"
+
+endpoints:
+  recipes:
+    - endpoint: /api/recipes
+      method: POST
+      body: |
+        {
+          "name": "Pasta Carbonara",
+          "ingredients": ["Pasta","Eggs","Bacon"]
+        }
+      description: Create a new recipe
+    - endpoint: /api/recipes
+      method: GET
+      body: null
+      description: Get all recipes
+    - endpoint: /api/recipes/search
+      method: POST
+      body: |
+        {
+          "ingredients": ["Eggs","Bacon"]
+        }
+      description: Search recipes by ingredients
+  ingredients:
+    - endpoint: /api/ingredients
+      method: GET
+      description: Get all ingredients from all recipes
+  images:
+    - endpoint: /api/images/{ingredientName}
+      method: GET
+      description: Get image URL for an ingredient via external API
+
+validation:
+  rules:
+    - Recipe Name cannot be empty
+    - Recipes must have at least one ingredient
+  invalid_example: |
+    {
+      "name": "",
+      "ingredients": []
+    }
+  behavior: Returns 400 Bad Request with validation errors
+  handler: FluentValidation
+
+caching:
+  description: SearchRecipesHandler caches search results in-memory for 5 minutes
+  note: Can add caching to IngredientsController and ImagesController
+
+next_steps:
+  - Add pagination for recipes and ingredients
+  - Implement update/delete endpoints for recipes
+  - Add unit tests for Handlers and Repositories
+  - Integrate distributed cache (Redis) for scalability
+  - Connect to a real external image API for ingredient images
+
+git:
+  init: "git init"
+  add_all: "git add ."
+  initial_commit: "git commit -m 'Initial commit: RecipeFinder API with Clean Architecture, PostgreSQL, caching and Swagger'"
+  add_remote: "git remote add origin https://github.com/YOUR_USERNAME/RecipeFinder.git"
+  push: "git push -u origin main"
+
+notes:
+  - Ensure PostgreSQL username and password match your local setup
+  - Swagger automatically documents all endpoints
+  - Use DTOs for all request/response models to decouple API from domain

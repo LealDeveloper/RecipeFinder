@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/RecipeFinder.API/RecipeFinder.API.csproj" />
+    <Project Path="src/RecipeFinder.Application/RecipeFinder.Application.csproj" />
+    <Project Path="src/RecipeFinder.Domain/RecipeFinder.Domain.csproj" />
+    <Project Path="src/RecipeFinder.Infrastructure/RecipeFinder.Infrastructure.csproj" />
+  </Folder>
+</Solution>
