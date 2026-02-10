@@ -2,7 +2,12 @@
 using RecipeFinder.API.DTOs;
 using RecipeFinder.Application.Interfaces;
 using RecipeFinder.Application.Recipes.CreateRecipe;
+using RecipeFinder.Application.Recipes.DeleteRecipe;
+using RecipeFinder.Application.Recipes.GetAllRecipes;
 using RecipeFinder.Application.Recipes.SearchRecipes;
+using RecipeFinder.Application.Recipes.UpdateRecipe;
+using RecipeFinder.Domain.Entities;
+using RecipeFinder.Infrastructure.Repositories;
 
 namespace RecipeFinder.API.Controllers;
 
@@ -11,50 +16,58 @@ namespace RecipeFinder.API.Controllers;
 public class RecipesController : ControllerBase
 {
     private readonly CreateRecipeHandler _createRecipeHandler;
-    private readonly IRecipeRepository _recipeRepository;
+    private readonly GetAllRecipesHandler _getAllRecipesHandler;
     private readonly SearchRecipesHandler _searchRecipesHandler;
+    private readonly UpdateRecipeHandler _updateRecipeHandler;
+    private readonly DeleteRecipeHandler _deleteRecipeHandler;
 
     public RecipesController(CreateRecipeHandler createRecipeHandler,
-                             IRecipeRepository recipeRepository,
-                             SearchRecipesHandler searchRecipesHandler)
+                         SearchRecipesHandler searchRecipesHandler,
+                         GetAllRecipesHandler getAllRecipesHandler,
+                         UpdateRecipeHandler updateRecipeHandler,
+                         DeleteRecipeHandler deleteRecipeHandler)
     {
         _createRecipeHandler = createRecipeHandler;
-        _recipeRepository = recipeRepository;
         _searchRecipesHandler = searchRecipesHandler;
+        _getAllRecipesHandler = getAllRecipesHandler;
+        _updateRecipeHandler = updateRecipeHandler;
+        _deleteRecipeHandler = deleteRecipeHandler;
     }
 
     [HttpPost]
-    public async Task<IActionResult> Create([FromBody] CreateRecipeRequest request)
+    public async Task<IActionResult> Create(CreateRecipeRequest request)
     {
-        var command = new CreateRecipeCommand(request.Name, request.Ingredients);
-        var recipeId = await _createRecipeHandler.Handle(command);
+        var recipeId = await _createRecipeHandler.Handle(
+            new CreateRecipeCommand(request.Name, request.Ingredients));
 
-        var response = new CreateRecipeResponse { Id = recipeId };
-        return CreatedAtAction(nameof(GetAll), new { id = recipeId }, response);
+        return CreatedAtAction(nameof(GetAll), new { id = recipeId },
+            new CreateRecipeResponse { Id = recipeId });
+    }
+    [HttpPut("{id}")]
+    public async Task<IActionResult> Update(Guid id, [FromBody] UpdateRecipeRequest request)
+    {
+        await _updateRecipeHandler.Handle(new UpdateRecipeCommand(id, request.Name, request.Ingredients));
+        return NoContent();
+    }
+
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> Delete(Guid id)
+    {
+        await _deleteRecipeHandler.Handle(new DeleteRecipeCommand(id));
+        return NoContent();
     }
 
     [HttpGet]
     public async Task<IActionResult> GetAll([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
     {
-        var allRecipes = await _recipeRepository.GetAllAsync();
-
-        var pagedRecipes = allRecipes
-            .Skip((page - 1) * pageSize)
-            .Take(pageSize)
-            .Select(r => new RecipeResponse
-            {
-                Id = r.Id,
-                Name = r.Name!,
-                Ingredients = r.Ingredients.Select(i => i.Name!).ToList()
-            })
-            .ToList();
-
+        var (recipes, totalCount) = await _getAllRecipesHandler.Handle(page, pageSize);
+        var items = recipes.Select(Map).ToList();
         var response = new PagedResponse<RecipeResponse>
         {
-            Items = pagedRecipes,
+            Items = items,
             Page = page,
             PageSize = pageSize,
-            TotalCount = allRecipes.Count()
+            TotalCount = totalCount
         };
 
         return Ok(response);
@@ -62,29 +75,29 @@ public class RecipesController : ControllerBase
 
     [HttpPost("search")]
     public async Task<IActionResult> Search([FromBody] SearchRecipeRequest request,
-                                            [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+                                        [FromQuery] int page = 1,
+                                        [FromQuery] int pageSize = 10)
     {
-        var recipes = await _searchRecipesHandler.Handle(new SearchRecipeCommand(request.Ingredients));
-
-        var pagedRecipes = recipes
-            .Skip((page - 1) * pageSize)
-            .Take(pageSize)
-            .Select(r => new RecipeResponse
-            {
-                Id = r.Id,
-                Name = r.Name!,
-                Ingredients = r.Ingredients.Select(i => i.Name!).ToList()
-            })
-            .ToList();
-
+        var command = new SearchRecipesCommand(request.Ingredients, page, pageSize);
+        var (recipes, totalCount) = await _searchRecipesHandler.Handle(command);
+        var items = recipes.Select(Map).ToList();
         var response = new PagedResponse<RecipeResponse>
         {
-            Items = pagedRecipes,
+            Items = items,
             Page = page,
             PageSize = pageSize,
-            TotalCount = recipes.Count()
+            TotalCount = totalCount
         };
 
         return Ok(response);
     }
+
+
+    private static RecipeResponse Map(Recipe r) => new()
+    {
+        Id = r.Id,
+        Name = r.Name!,
+        Ingredients = r.Ingredients.Select(i => i.Name!).ToList()
+    };
 }
+

@@ -3,7 +3,10 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using RecipeFinder.Application.Interfaces;
 using RecipeFinder.Application.Recipes.CreateRecipe;
+using RecipeFinder.Application.Recipes.DeleteRecipe;
+using RecipeFinder.Application.Recipes.GetAllRecipes;
 using RecipeFinder.Application.Recipes.SearchRecipes;
+using RecipeFinder.Application.Recipes.UpdateRecipe;
 using RecipeFinder.Infrastructure.Persistence;
 using RecipeFinder.Infrastructure.Repositories;
 
@@ -28,6 +31,9 @@ namespace RecipeFinder.API.DependencyInjection
             // Handlers
             services.AddScoped<CreateRecipeHandler>();
             services.AddScoped<SearchRecipesHandler>();
+            services.AddScoped<GetAllRecipesHandler>();
+            services.AddScoped<UpdateRecipeHandler>();
+            services.AddScoped<DeleteRecipeHandler>();
             return services;
         }
     }
