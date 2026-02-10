@@ -1,11 +1,11 @@
 ﻿using Microsoft.Extensions.Caching.Distributed;
 using RecipeFinder.Application.Interfaces;
 using RecipeFinder.Domain.Entities;
+using System.Linq;
 using System.Text.Json;
 
-namespace RecipeFinder.Application.Recipes.SearchRecipes
+namespace RecipeFinder.Application.Recipes.GetAllRecipes
 {
-    // DTO simples para armazenar no cache
     public class RecipeCacheDto
     {
         public Guid Id { get; set; }
@@ -19,42 +19,37 @@ namespace RecipeFinder.Application.Recipes.SearchRecipes
         public int TotalCount { get; set; }
     }
 
-    public class SearchRecipesHandler
+    public class GetAllRecipesHandler
     {
         private readonly IRecipeRepository _recipeRepository;
         private readonly IDistributedCache _cache;
 
-        public SearchRecipesHandler(IRecipeRepository recipeRepository, IDistributedCache cache)
+        public GetAllRecipesHandler(IRecipeRepository recipeRepository, IDistributedCache cache)
         {
             _recipeRepository = recipeRepository;
             _cache = cache;
         }
 
-        public async Task<(IEnumerable<Recipe>, int)> Handle(SearchRecipesCommand command)
+        public async Task<(IEnumerable<Recipe>, int)> Handle(int page, int pageSize)
         {
-            var cacheKey = BuildCacheKey(command.Ingredients, command.Page, command.PageSize);
+            var cacheKey = $"all_recipes:page:{page}:size:{pageSize}";
 
-            // Tenta buscar do cache
             var cached = await _cache.GetStringAsync(cacheKey);
             if (cached != null)
             {
                 var cachedObj = JsonSerializer.Deserialize<PagedRecipesCacheDto>(cached)!;
-
                 // Converte de volta para entidades do domínio
                 var recipesFromCache = cachedObj.Recipes.Select(r => new Recipe(
                     r.Id,
                     r.Name,
                     r.Ingredients.Select(i => new Ingredient(Guid.NewGuid(), i)).ToList()
                 ));
-
                 return (recipesFromCache, cachedObj.TotalCount);
             }
 
-            // Busca do repositório com paginação
-            var (recipes, totalCount) = await _recipeRepository.GetByIngredientsPagedAsync(
-                command.Ingredients, command.Page, command.PageSize);
+            // Busca paginada no repositório
+            (var recipes, var totalCount) = await _recipeRepository.GetPagedAsync(page, pageSize);
 
-            // Converte para DTOs antes de guardar no cache
             var cacheObj = new PagedRecipesCacheDto
             {
                 Recipes = recipes.Select(r => new RecipeCacheDto
@@ -77,12 +72,6 @@ namespace RecipeFinder.Application.Recipes.SearchRecipes
                 options);
 
             return (recipes, totalCount);
-        }
-
-        private static string BuildCacheKey(List<string> ingredients, int page, int pageSize)
-        {
-            var keyIngredients = string.Join("-", ingredients.OrderBy(i => i));
-            return $"search:{keyIngredients}:page:{page}:size:{pageSize}";
         }
     }
 }

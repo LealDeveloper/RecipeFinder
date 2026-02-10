@@ -15,6 +15,24 @@ public class Recipe
         Id = id;
         Name = name;
     }
+    public Recipe(string name, List<Ingredient> ingredients)
+    {
+        Id = Guid.NewGuid();
+        Name = name;
+        Ingredients = ingredients;
+    }
+    public Recipe(Guid id, string name, List<Ingredient> ingredients)
+    {
+        Id = id;
+        Name = name;
+        Ingredients = ingredients;
+    }
+
+    public void Update(string name, List<Ingredient> ingredients)
+    {
+        Name = name;
+        Ingredients = ingredients;
+    }
 
     public void AddIngredient(Ingredient ingredient)
     {
