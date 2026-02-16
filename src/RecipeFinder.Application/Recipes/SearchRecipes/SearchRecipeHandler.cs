@@ -6,18 +6,7 @@ using System.Text.Json;
 namespace RecipeFinder.Application.Recipes.SearchRecipes
 {
     // DTO simples para armazenar no cache
-    public class RecipeCacheDto
-    {
-        public Guid Id { get; set; }
-        public string Name { get; set; } = null!;
-        public List<string> Ingredients { get; set; } = new();
-    }
 
-    public class PagedRecipesCacheDto
-    {
-        public List<RecipeCacheDto> Recipes { get; set; } = new();
-        public int TotalCount { get; set; }
-    }
 
     public class SearchRecipesHandler
     {
@@ -38,7 +27,7 @@ namespace RecipeFinder.Application.Recipes.SearchRecipes
             var cached = await _cache.GetStringAsync(cacheKey);
             if (cached != null)
             {
-                var cachedObj = JsonSerializer.Deserialize<PagedRecipesCacheDto>(cached)!;
+                var cachedObj = JsonSerializer.Deserialize<PagedRecipesCache>(cached)!;
 
                 // Converte de volta para entidades do domínio
                 var recipesFromCache = cachedObj.Recipes.Select(r => new Recipe(
@@ -55,9 +44,9 @@ namespace RecipeFinder.Application.Recipes.SearchRecipes
                 command.Ingredients, command.Page, command.PageSize);
 
             // Converte para DTOs antes de guardar no cache
-            var cacheObj = new PagedRecipesCacheDto
+            var cacheObj = new PagedRecipesCache
             {
-                Recipes = recipes.Select(r => new RecipeCacheDto
+                Recipes = recipes.Select(r => new RecipeCache
                 {
                     Id = r.Id,
                     Name = r.Name!,

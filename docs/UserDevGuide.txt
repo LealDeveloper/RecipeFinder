@@ -1,0 +1,14 @@
+🎯 Objetivo
+
+Adicionar Users com:
+
+Tabela no banco
+
+Entidade de domínio
+
+Repositório
+
+Casos de uso (Create / Get)
+
+Base para autenticação futura (JWT)
+

@@ -6,18 +6,7 @@ using System.Text.Json;
 
 namespace RecipeFinder.Application.Recipes.GetAllRecipes
 {
-    public class RecipeCacheDto
-    {
-        public Guid Id { get; set; }
-        public string Name { get; set; } = null!;
-        public List<string> Ingredients { get; set; } = new();
-    }
 
-    public class PagedRecipesCacheDto
-    {
-        public List<RecipeCacheDto> Recipes { get; set; } = new();
-        public int TotalCount { get; set; }
-    }
 
     public class GetAllRecipesHandler
     {
@@ -37,7 +26,7 @@ namespace RecipeFinder.Application.Recipes.GetAllRecipes
             var cached = await _cache.GetStringAsync(cacheKey);
             if (cached != null)
             {
-                var cachedObj = JsonSerializer.Deserialize<PagedRecipesCacheDto>(cached)!;
+                var cachedObj = JsonSerializer.Deserialize<PagedRecipesCache>(cached)!;
                 // Converte de volta para entidades do domínio
                 var recipesFromCache = cachedObj.Recipes.Select(r => new Recipe(
                     r.Id,
@@ -50,9 +39,9 @@ namespace RecipeFinder.Application.Recipes.GetAllRecipes
             // Busca paginada no repositório
             (var recipes, var totalCount) = await _recipeRepository.GetPagedAsync(page, pageSize);
 
-            var cacheObj = new PagedRecipesCacheDto
+            var cacheObj = new PagedRecipesCache
             {
-                Recipes = recipes.Select(r => new RecipeCacheDto
+                Recipes = recipes.Select(r => new RecipeCache
                 {
                     Id = r.Id,
                     Name = r.Name!,

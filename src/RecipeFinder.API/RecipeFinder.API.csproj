@@ -24,4 +24,8 @@
     <ProjectReference Include="..\RecipeFinder.Infrastructure\RecipeFinder.Infrastructure.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="DTOs\Request\Generic\" />
+  </ItemGroup>
+
 </Project>

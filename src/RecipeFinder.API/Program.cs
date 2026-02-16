@@ -1,8 +1,9 @@
 ﻿using FluentValidation;
 using FluentValidation.AspNetCore;
-using RecipeFinder.API.DependencyInjection;
-using RecipeFinder.API.DTOs;
 using RecipeFinder.API.Validators;
+using RecipeFinder.API.Validators.Recipe;
+using RecipeFinder.Application;
+using RecipeFinder.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -39,6 +40,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.UseMiddleware<ExceptionMiddleware>();
 app.UseAuthorization();
 app.MapControllers();
 app.Run();

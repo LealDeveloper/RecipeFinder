@@ -1,4 +1,4 @@
-﻿namespace RecipeFinder.API.DTOs
+﻿namespace RecipeFinder.API.DTOs.Response.Recipe
 {
     public class CreateRecipeResponse
     {
