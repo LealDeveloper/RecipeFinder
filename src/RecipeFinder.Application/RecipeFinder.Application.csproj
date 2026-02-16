@@ -1,6 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
+    <PackageReference Include="BCrypt.Net-Next" Version="4.1.0" />
     <PackageReference Include="FluentValidation" Version="12.1.1" />
     <PackageReference Include="MediatR" Version="14.0.0" />
     <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="10.0.2" />
@@ -8,6 +9,13 @@
 
   <ItemGroup>
     <ProjectReference Include="..\RecipeFinder.Domain\RecipeFinder.Domain.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Users\DeleteUser\" />
+    <Folder Include="Users\GetUser\" />
+    <Folder Include="Users\SearchUser\" />
+    <Folder Include="Users\UpdateUser\" />
   </ItemGroup>
 
   <PropertyGroup>

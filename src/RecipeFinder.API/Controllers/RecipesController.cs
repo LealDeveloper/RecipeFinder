@@ -1,13 +1,13 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using RecipeFinder.API.DTOs;
-using RecipeFinder.Application.Interfaces;
+using RecipeFinder.API.DTOs.Request.Recipe;
+using RecipeFinder.API.DTOs.Response.Generic;
+using RecipeFinder.API.DTOs.Response.Recipe;
 using RecipeFinder.Application.Recipes.CreateRecipe;
 using RecipeFinder.Application.Recipes.DeleteRecipe;
 using RecipeFinder.Application.Recipes.GetAllRecipes;
 using RecipeFinder.Application.Recipes.SearchRecipes;
 using RecipeFinder.Application.Recipes.UpdateRecipe;
 using RecipeFinder.Domain.Entities;
-using RecipeFinder.Infrastructure.Repositories;
 
 namespace RecipeFinder.API.Controllers;
 

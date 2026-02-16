@@ -1,16 +1,14 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
-using Microsoft.Extensions.Configuration; // 🔹 para ConfigurationBuilder
-using System.IO;
-
-namespace RecipeFinder.Infrastructure.Persistence;
+using Microsoft.Extensions.Configuration;
+using RecipeFinder.Infrastructure.Persistence;
 
 public class RecipeDbContextFactory : IDesignTimeDbContextFactory<RecipeDbContext>
 {
     public RecipeDbContext CreateDbContext(string[] args)
     {
         var configuration = new ConfigurationBuilder()
-            .SetBasePath(Directory.GetCurrentDirectory()) // precisa de FileExtensions
+            .SetBasePath(Directory.GetCurrentDirectory())
             .AddJsonFile("appsettings.json")
             .Build();
 
@@ -20,4 +18,3 @@ public class RecipeDbContextFactory : IDesignTimeDbContextFactory<RecipeDbContex
         return new RecipeDbContext(optionsBuilder.Options);
     }
 }
-

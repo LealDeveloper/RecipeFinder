@@ -1,7 +1,7 @@
 ﻿using FluentValidation;
-using RecipeFinder.API.DTOs;
+using RecipeFinder.API.DTOs.Request.Recipe;
 
-namespace RecipeFinder.API.Validators
+namespace RecipeFinder.API.Validators.Recipe
 {
     public class SearchRecipesRequestValidator : AbstractValidator<SearchRecipeRequest>
     {
