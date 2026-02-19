@@ -1,7 +1,9 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using RecipeFinder.Application.Interfaces;
+using RecipeFinder.Application.Common.Interfaces;
 using RecipeFinder.Domain.Entities;
 using RecipeFinder.Infrastructure.Persistence;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace RecipeFinder.Infrastructure.Repositories;
 
@@ -13,85 +15,81 @@ public class UserRepository : IUserRepository
     {
         _context = context;
     }
-
-    public async Task AddAsync(User user)
+    public async Task<User?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        await _context.Users.AddAsync(user);
-        await _context.SaveChangesAsync();
+        return await _context.DomainUsers
+            .FirstOrDefaultAsync(u => u.Id == id, cancellationToken);
     }
 
-    public async Task<User?> GetByDisplayNameAsync(string displayname)
+    public async Task UpdateAsync(User user, CancellationToken cancellationToken = default)
     {
-        return await _context.Users
-            .FirstOrDefaultAsync(u => u.DisplayName == displayname);
+        _context.DomainUsers.Update(user);
+        await _context.SaveChangesAsync(cancellationToken);
+    }
+    public async Task DeleteAsync(User user, CancellationToken cancellationToken = default)
+    {
+        _context.DomainUsers.Remove(user);
+        await _context.SaveChangesAsync(cancellationToken);
     }
 
-    public async Task<User?> GetByEmailAsync(string email)
+    public async Task AddAsync(User user, CancellationToken cancellationToken = default)
     {
-        return await _context.Users
-            .FirstOrDefaultAsync(u => u.Email == email);
+        await _context.DomainUsers.AddAsync(user, cancellationToken);
+        await _context.SaveChangesAsync(cancellationToken);
     }
 
-    public async Task<User?> GetByIdAsync(Guid id)
+    public async Task<User?> GetByDisplayNameAsync(string displayname, CancellationToken cancellationToken = default)
     {
-        return await _context.Users
-            .FirstOrDefaultAsync(u => u.Id == id);
+        return await _context.DomainUsers
+            .FirstOrDefaultAsync(u => u.DisplayName == displayname, cancellationToken);
     }
 
-    public async Task<User?> UpdateAsync(User user)
+    public async Task<User?> GetByEmailAsync(string email, CancellationToken cancellationToken = default)
     {
-        _context.Users.Update(user);
-        await _context.SaveChangesAsync();
-        return user;
+        return await _context.DomainUsers
+            .FirstOrDefaultAsync(u => u.Email == email, cancellationToken);
     }
 
-    public async Task DeleteAsync(User user)
+    public async Task<(List<User> Users, int TotalCount)> GetPagedAsync(int page, int pageSize, CancellationToken cancellationToken = default)
     {
-        _context.Users.Remove(user);
-        await _context.SaveChangesAsync();
-    }
+        var baseQuery = _context.DomainUsers.AsNoTracking();
 
-    public async Task<(List<User> Users, int TotalCount)> GetPagedAsync(int page, int pageSize)
-    {
-        var baseQuery = _context.Users.AsNoTracking();
-
-        var totalCount = await baseQuery.CountAsync();
+        var totalCount = await baseQuery.CountAsync(cancellationToken);
 
         var userIds = await baseQuery
             .OrderBy(u => u.DisplayName)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .Select(u => u.Id)
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
 
-        var users = await _context.Users
+        var users = await _context.DomainUsers
             .AsNoTracking()
             .Where(u => userIds.Contains(u.Id))
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
 
         return (users, totalCount);
     }
 
-    public async Task<(List<User> Users, int TotalCount)> GetByDisplayNamePagedAsync(string displayName, int page, int pageSize)
+    public async Task<(List<User> Users, int TotalCount)> GetByDisplayNamePagedAsync(string displayName, int page, int pageSize, CancellationToken cancellationToken = default)
     {
-        // Quando displayName for nulo ou vazio, retorna todos (paginados).
-        var baseQuery = _context.Users
+        var baseQuery = _context.DomainUsers
             .AsNoTracking()
-            .Where(u => string.IsNullOrEmpty(displayName) || u.DisplayName.Contains(displayName));
+            .Where(u => string.IsNullOrEmpty(displayName) || EF.Functions.ILike(u.DisplayName, $"%{displayName}%"));
 
-        var totalCount = await baseQuery.CountAsync();
+        var totalCount = await baseQuery.CountAsync(cancellationToken);
 
         var userIds = await baseQuery
             .OrderBy(u => u.DisplayName)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .Select(u => u.Id)
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
 
-        var users = await _context.Users
+        var users = await _context.DomainUsers
             .AsNoTracking()
             .Where(u => userIds.Contains(u.Id))
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
 
         return (users, totalCount);
     }

@@ -1,91 +1,107 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using RecipeFinder.Application.Users.CreateUser;
-using RecipeFinder.Application.Interfaces;
+﻿using MediatR;
+using Microsoft.AspNetCore.Mvc;
 using RecipeFinder.API.DTOs.Request.User;
+using RecipeFinder.API.DTOs.Response.Generic;
 using RecipeFinder.API.DTOs.Response.User;
+using RecipeFinder.Application.Commands.Users.CreateUser;
+using RecipeFinder.Domain.Entities;
 
-namespace RecipeFinder.API.Controllers
+namespace RecipeFinder.API.Controllers;
+
+[ApiController]
+[Route("api/[controller]")]
+public class UsersController : ControllerBase
 {
-    [Route("api/[controller]")]
-    [ApiController]
-    public class UsersController : ControllerBase
+    private readonly ISender _sender;
+
+    public UsersController(ISender sender)
     {
-        private readonly CreateUserHandler _createUserHandler;
-        private readonly IUserRepository _userRepository;
-        private readonly IPasswordHasher _passwordHasher;
-
-        public UsersController(
-            CreateUserHandler createUserHandler,
-            IUserRepository userRepository,
-            IPasswordHasher passwordHasher)
-        {
-            _createUserHandler = createUserHandler;
-            _userRepository = userRepository;
-            _passwordHasher = passwordHasher;
-        }
-
-        [HttpPost]
-        public async Task<IActionResult> Create([FromBody] CreateUserRequest request)
-        {
-            var id = await _createUserHandler.Handle(new CreateUserCommand(request.Nickname, request.Email, request.Password));
-            return CreatedAtAction(nameof(GetById), new { id }, new { Id = id });
-        }
-
-        [HttpGet("{id:guid}")]
-        public async Task<IActionResult> GetById(Guid id)
-        {
-            var user = await _userRepository.GetByIdAsync(id);
-            if (user == null) return NotFound();
-
-            var response = new UserResponse
-            {
-                Id = user.Id,
-                Nickname = user.DisplayName,
-                Email = user.Email
-            };
-
-            return Ok(response);
-        }
-
-        [HttpGet("search")]
-        public async Task<IActionResult> Search([FromQuery] string? nickname)
-        {
-            if (string.IsNullOrWhiteSpace(nickname)) return BadRequest("nickname is required");
-
-            var user = await _userRepository.GetByDisplayNameAsync(nickname);
-            if (user == null) return NotFound();
-
-            var response = new UserResponse
-            {
-                Id = user.Id,
-                Nickname = user.DisplayName,
-                Email = user.Email
-            };
-
-            return Ok(response);
-        }
-
-        [HttpPost("login")]
-        public async Task<IActionResult> Login([FromBody] LoginRequest request)
-        {
-            // tenta por email primeiro, depois por nickname
-            var user = await _userRepository.GetByEmailAsync(request.EmailOrNickname)
-                       ?? await _userRepository.GetByDisplayNameAsync(request.EmailOrNickname);
-
-            if (user == null) return Unauthorized("Invalid credentials");
-
-            var valid = _passwordHasher.Verify(request.Password, user.PasswordHash);
-            if (!valid) return Unauthorized("Invalid credentials");
-
-            // Aqui só devolvemos dados simples; em um cenário real, gerar um JWT ou session.
-            var response = new UserResponse
-            {
-                Id = user.Id,
-                Nickname = user.DisplayName,
-                Email = user.Email
-            };
-
-            return Ok(response);
-        }
+        _sender = sender;
     }
+
+    [HttpPost]
+    public async Task<IActionResult> Create([FromBody] CreateUserRequest request, 
+                                            CancellationToken cancellationToken)
+    {
+        var id = await _sender.Send(
+            new CreateUserCommand(
+                request.Nickname,
+                request.Email,
+                request.Password),
+            cancellationToken);
+
+        return CreatedAtAction(
+            nameof(GetById), 
+            new { id }, 
+            new { Id = id });
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> GetAll([FromQuery] int page = 1, 
+                                            [FromQuery] int pageSize = 10, 
+                                            CancellationToken cancellationToken = default)
+    {
+        var (users, totalCount) = await _sender.Send(new GetAllUsersQuery(page, pageSize), cancellationToken);
+        var items = users.Select(Map).ToList();
+        var response = new PagedResponse<UserResponse>
+        {
+            Items = items,
+            Page = page,
+            PageSize = pageSize,
+            TotalCount = totalCount
+        };
+        return Ok(response);
+    }
+
+    [HttpGet("{id:guid}")]
+    public async Task<IActionResult> GetById(Guid id, 
+                                             CancellationToken cancellationToken = default)
+    {
+        var user = await _sender.Send(new GetUserQuery(id), cancellationToken);
+        if (user == null) return NotFound();
+        return Ok(Map(user));
+    }
+
+    [HttpGet("search")]
+    public async Task<IActionResult> Search([FromQuery] string? nickname, 
+                                            [FromQuery] int page = 1, 
+                                            [FromQuery] int pageSize = 10, 
+                                            CancellationToken cancellationToken = default)
+    {
+        var command = new SearchUserCommand(nickname ?? string.Empty, string.Empty, page, pageSize);
+        var (users, totalCount) = await _sender.Send(command, cancellationToken);
+        var items = users.Select(Map).ToList();
+        var response = new PagedResponse<UserResponse>
+        {
+            Items = items,
+            Page = page,
+            PageSize = pageSize,
+            TotalCount = totalCount
+        };
+        return Ok(response);
+    }
+
+    [HttpPut("{id:guid}")]
+    public async Task<IActionResult> Update(Guid id, 
+                                            [FromBody] UpdateUserRequest request, 
+                                            CancellationToken cancellationToken = default)
+    {
+        await _sender.Send(new UpdateUserCommand(id, request.Nickname, request.Email), cancellationToken);
+        return NoContent();
+    }
+
+    [HttpDelete("{id:guid}")]
+    public async Task<IActionResult> Delete(Guid id, 
+                                            CancellationToken cancellationToken = default)
+    {
+        await _sender.Send(new DeleteUserCommand(id), cancellationToken);
+        return NoContent();
+    }
+
+    private static UserResponse Map(User u) => new()
+    {
+        Id = u.Id,
+        Nickname = u.DisplayName,
+        Email = u.Email
+    };
 }

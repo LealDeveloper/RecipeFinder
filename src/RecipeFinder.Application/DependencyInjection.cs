@@ -1,14 +1,17 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
-using RecipeFinder.Application.Interfaces;
-using RecipeFinder.Application.Recipes.CreateRecipe;
-using RecipeFinder.Application.Recipes.DeleteRecipe;
-using RecipeFinder.Application.Recipes.GetAllRecipes;
-using RecipeFinder.Application.Recipes.SearchRecipes;
-using RecipeFinder.Application.Recipes.UpdateRecipe;
-using RecipeFinder.Application.Users.CreateUser;
-using RecipeFinder.Application.Users.GetAllUser;
-using RecipeFinder.Application.Users.SearchUser;
-using RecipeFinder.Application.Users.UpdateUser;
+using RecipeFinder.Application.Handlers.Recipes.CreateRecipe;
+using RecipeFinder.Application.Handlers.Recipes.DeleteRecipe;
+using RecipeFinder.Application.Handlers.Recipes.UpdateRecipe;
+using RecipeFinder.Application.Handlers.Users.CreateUser;
+using RecipeFinder.Application.Handlers.Users.DeleteUser;
+using RecipeFinder.Application.Handlers.Users.UpdateUser;
+using RecipeFinder.Application.Handlers.Users.GetUser;
+using RecipeFinder.Application.Common.Interfaces;
+using RecipeFinder.Application.Handlers.Recipes.GetAllRecipe;
+using RecipeFinder.Application.Handlers.Recipes.SearchRecipe;
+using RecipeFinder.Application.Handlers.Users.GetAllUser;
+using RecipeFinder.Application.Handlers.Users.SearchUsers;
+using MediatR;
 
 namespace RecipeFinder.Application
 {
@@ -16,17 +19,10 @@ namespace RecipeFinder.Application
     {
         public static IServiceCollection AddApplication(this IServiceCollection services)
         {
-            services.AddScoped<CreateRecipeHandler>();
-            services.AddScoped<GetAllRecipesHandler>();
-            services.AddScoped<SearchRecipesHandler>();
-            services.AddScoped<UpdateRecipeHandler>();
-            services.AddScoped<DeleteRecipeHandler>();
-            services.AddScoped<CreateUserHandler>();
-            services.AddScoped<DeleteUserHandler>();
-            services.AddScoped<GetAllUserHandler>();
-            services.AddScoped<SearchUserHandler>();
-            services.AddScoped<UpdateUserHandler>();
-            services.AddScoped<IPasswordHasher, PasswordHasher>();
+            services.AddMediatR(cfg =>
+                cfg.RegisterServicesFromAssembly(
+                    typeof(DependencyInjection).Assembly));
+
             return services;
         }
     }

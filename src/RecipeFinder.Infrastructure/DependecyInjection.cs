@@ -1,9 +1,12 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using RecipeFinder.Application.Interfaces;
+using RecipeFinder.Application.Common.Interfaces;
+using RecipeFinder.Infrastructure.Identity;
 using RecipeFinder.Infrastructure.Persistence;
 using RecipeFinder.Infrastructure.Repositories;
+using RecipeFinder.Infrastructure.Services;
 
 namespace RecipeFinder.Infrastructure
 {
@@ -18,7 +21,11 @@ namespace RecipeFinder.Infrastructure
 
             services.AddScoped<IRecipeRepository, RecipeRepository>();
             services.AddScoped<IUserRepository, UserRepository>();
-
+            services.AddIdentity<ApplicationUser, IdentityRole<Guid>>()
+                        .AddEntityFrameworkStores<RecipeDbContext>()
+                        .AddDefaultTokenProviders();
+            // IdentityService
+            services.AddScoped<IIdentityService, IdentityService>();
 
             return services;
         }

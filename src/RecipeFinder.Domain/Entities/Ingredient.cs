@@ -1,15 +1,25 @@
-﻿namespace RecipeFinder.Domain.Entities;
+﻿using RecipeFinder.Domain.Entities.Common;
 
-public class Ingredient
+namespace RecipeFinder.Domain.Entities;
+
+public class Ingredient : Entity<Guid>
 {
-    public Guid Id { get; private set; }
-    public string? Name { get; private set; }
+    public string Name { get; private set; } = null!;
 
-    private Ingredient() { }
+    protected Ingredient() { } // EF Core
 
-    public Ingredient(Guid id, string name)
+    // Construtor principal
+    public Ingredient(Guid id, string name) : base(id)
     {
-        Id = id;
+        Name = name;
+    }
+
+    // Construtor simplificado
+    public Ingredient(string name) : this(Guid.NewGuid(), name) { }
+
+    // Método para alterar o nome se necessário
+    public void UpdateName(string name)
+    {
         Name = name;
     }
 }
