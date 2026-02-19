@@ -1,8 +1,0 @@
-﻿using RecipeFinder.Application.Recipes;
-using RecipeFinder.Domain.Entities;
-
-public class PagedRecipesCache
-{
-    public List<RecipeCache> Recipes { get; set; } = new();
-    public int TotalCount { get; set; }
-}

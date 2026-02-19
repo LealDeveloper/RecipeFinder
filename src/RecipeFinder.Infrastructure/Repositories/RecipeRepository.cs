@@ -1,5 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using RecipeFinder.Application.Interfaces;
+using RecipeFinder.Application.Common.Interfaces;
 using RecipeFinder.Domain.Entities;
 using RecipeFinder.Infrastructure.Persistence;
 
@@ -13,68 +13,68 @@ public class RecipeRepository : IRecipeRepository
     {
         _context = context;
     }
-    public async Task<Recipe?> GetByIdAsync(Guid id)
+    public async Task<Recipe?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
         return await _context.Recipes
             .Include(r => r.Ingredients)
-            .FirstOrDefaultAsync(r => r.Id == id);
+            .FirstOrDefaultAsync(r => r.Id == id, cancellationToken);
     }
 
-    public async Task UpdateAsync(Recipe recipe)
+    public async Task UpdateAsync(Recipe recipe, CancellationToken cancellationToken = default)
     {
         _context.Recipes.Update(recipe);
-        await _context.SaveChangesAsync();
+        await _context.SaveChangesAsync(cancellationToken);
     }
 
-    public async Task DeleteAsync(Recipe recipe)
+    public async Task DeleteAsync(Recipe recipe, CancellationToken cancellationToken = default)
     {
         _context.Recipes.Remove(recipe);
-        await _context.SaveChangesAsync();
+        await _context.SaveChangesAsync(cancellationToken);
     }
-    public async Task<IEnumerable<Recipe>> GetAllAsync()
+    public async Task<IEnumerable<Recipe>> GetAllAsync(CancellationToken cancellationToken = default)
     {
         return await _context.Recipes
             .Include(r => r.Ingredients)
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
     }
 
-    public async Task AddAsync(Recipe recipe)
+    public async Task AddAsync(Recipe recipe, CancellationToken cancellationToken = default)
     {
-        await _context.Recipes.AddAsync(recipe);
-        await _context.SaveChangesAsync();
+        await _context.Recipes.AddAsync(recipe, cancellationToken);
+        await _context.SaveChangesAsync(cancellationToken);
     }
 
-    public async Task<IEnumerable<Recipe>> GetByIngredientsAsync(List<string> ingredients)
+    public async Task<IEnumerable<Recipe>> GetByIngredientsAsync(List<string> ingredients, CancellationToken cancellationToken = default)
     {
         return await _context.Recipes
             .Include(r => r.Ingredients)
             .Where(r => ingredients.All(i => r.Ingredients.Select(ing => ing.Name).Contains(i)))
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
     }
-    public async Task<(List<Recipe> Recipes, int TotalCount)> GetPagedAsync(int page,int pageSize)
+    public async Task<(List<Recipe> Recipes, int TotalCount)> GetPagedAsync(int page,int pageSize, CancellationToken cancellationToken = default)
     {
         var baseQuery = _context.Recipes.AsNoTracking();
 
-        var totalCount = await baseQuery.CountAsync();
+        var totalCount = await baseQuery.CountAsync(cancellationToken);
 
         var recipeIds = await baseQuery
             .OrderBy(r => r.Name)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .Select(r => r.Id)
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
 
         var recipes = await _context.Recipes
             .AsNoTracking()
             .Where(r => recipeIds.Contains(r.Id))
             .Include(r => r.Ingredients)
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
 
         return (recipes, totalCount);
     }
 
 
-    public async Task<(List<Recipe> Recipes, int TotalCount)> GetByIngredientsPagedAsync(List<string> ingredients,int page,int pageSize)
+    public async Task<(List<Recipe> Recipes, int TotalCount)> GetByIngredientsPagedAsync(List<string> ingredients,int page,int pageSize, CancellationToken cancellationToken = default)
     {
         var baseQuery = _context.Recipes
             .AsNoTracking()
@@ -82,20 +82,20 @@ public class RecipeRepository : IRecipeRepository
                 ingredients.All(i =>
                     r.Ingredients.Any(ing => ing.Name == i)));
 
-        var totalCount = await baseQuery.CountAsync();
+        var totalCount = await baseQuery.CountAsync(cancellationToken);
 
         var recipeIds = await baseQuery
             .OrderBy(r => r.Name)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .Select(r => r.Id)
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
 
         var recipes = await _context.Recipes
             .AsNoTracking()
             .Where(r => recipeIds.Contains(r.Id))
             .Include(r => r.Ingredients)
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
 
         return (recipes, totalCount);
     }

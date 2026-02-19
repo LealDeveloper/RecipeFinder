@@ -1,51 +1,28 @@
-﻿namespace RecipeFinder.Domain.Entities;
+﻿using RecipeFinder.Domain.Entities.Common;
 
-public class User
+namespace RecipeFinder.Domain.Entities;
+
+public class User : Entity<Guid>
 {
-    public Guid Id { get; private set; }
     public string DisplayName { get; private set; } = null!;
     public string Email { get; private set; } = null!;
-    public string PasswordHash { get; private set; } = null!;
     public DateTime CreatedAt { get; private set; }
+    public DateTime? UpdatedAt { get; private set; }
 
-    private User() { } // EF Core
+    protected User() { } // For EF
 
-    public User(Guid id, string email, string displayName, string passwordHash)
+    public User(Guid id, string displayName, string email)
+        : base(id)
     {
-        Id = id;
         DisplayName = displayName;
         Email = email;
-        PasswordHash = passwordHash;
         CreatedAt = DateTime.UtcNow;
     }
-    public User(Guid id, string email, string displayName)
-    {
-        Id = id;
-        DisplayName = displayName;
-        Email = email;
-    }
-    public void UpdateNickname(string displayName)
-    {
-        DisplayName = displayName;
-    }
-    public void UpdateEmail(string email)
-    {
-        Email = email;
-    }
+
     public void UpdateProfile(string displayName, string email)
     {
         DisplayName = displayName;
         Email = email;
-    }
-    public void UpdateProfile(string displayName, string email, string passwordHash)
-    {
-        DisplayName = displayName;
-        Email = email;
-        PasswordHash = passwordHash;
-    }
-
-    public void ChangePassword(string newPasswordHash)
-    {
-        PasswordHash = newPasswordHash;
+        UpdatedAt = DateTime.UtcNow;
     }
 }
